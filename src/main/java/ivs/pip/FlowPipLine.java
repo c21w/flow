@@ -510,7 +510,7 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
                     public void accept(OUT t) {
                         if(!(boolean) state)
                             return;
-                        state = predicate.test(t);
+                        state = !predicate.test(t);
                     }
                 };
             }
@@ -545,11 +545,11 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
 
 
     // 终结操作
-    public void evaluate(FlowPipLine<?, OUT> end) {
+    private void evaluate(FlowPipLine<?, OUT> end) {
         evaluateSequential(end);
     }
 
-    protected void evaluateSequential(FlowPipLine<?,OUT> end){
+    private void evaluateSequential(FlowPipLine<?,OUT> end){
         SinkChain<OUT, OUT> chain = this.warpPipeline(end);
 
         chain.begin(-1);
