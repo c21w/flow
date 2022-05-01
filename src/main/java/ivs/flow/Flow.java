@@ -1,12 +1,8 @@
 package ivs.flow;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.*;
 import java.util.stream.Collector;
 
 public interface Flow<T> {
@@ -15,9 +11,25 @@ public interface Flow<T> {
     static <T> Flow<T> of(T... t) {
         return Pool.create(t);
     }
+
     // 创建Flow流
     static <T> Flow<T> of(Collection<T> collection) {
         return Pool.create(collection);
+    }
+
+    // 创建长度为n，内容为supplier.get() 的 Flow流
+    static <T> Flow<T> of(int n, Supplier<T> supplier){
+        return Pool.create(n,supplier);
+    }
+
+    // 创建内容依次叠加的 Flow流
+    static Flow<Integer> range(int start,int end,int step){
+        AtomicInteger n = new AtomicInteger(start);
+        Supplier<Integer> supplier = ()->{
+            if(n.get() +step >= end) return n.get();
+            return n.addAndGet(step)-step;
+        };
+        return Pool.create((end-start+1)/step,supplier);
     }
 
     // 过滤
@@ -50,8 +62,8 @@ public interface Flow<T> {
     // 转换为数组
     Object[] toArray();
 
-    // 输入内容到数组
-    T[] toArray(T[] e);
+    // 转换为特定类型数组
+    T[] toArray(Class<T> tClass);
 
     // 获取流中元素的个数
     long count();

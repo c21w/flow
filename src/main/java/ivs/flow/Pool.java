@@ -3,9 +3,8 @@ package ivs.flow;
 import ivs.pip.FlowPipLine;
 import ivs.sink.SinkChain;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Spliterator;
+import java.util.*;
+import java.util.function.Supplier;
 
 public class Pool {
 
@@ -17,6 +16,14 @@ public class Pool {
     public static <T> Flow<T> create(Collection<T> collection) {
         Spliterator<T> spliterator = collection.spliterator();
         return create(spliterator);
+    }
+
+    public static <T> Flow<T> create(int n, Supplier<T> supplier) {
+        List<T> list = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            list.add(supplier.get());
+        }
+        return create(list.spliterator());
     }
 
     // 封装第一个 FlowPipLine 节点, 内部持有 wrapSink 方法，该方法可以返回自己持有的 Sink 对象，传入的参数是下一个Sink 对象

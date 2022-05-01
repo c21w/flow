@@ -3,6 +3,7 @@ package ivs.pip;
 import ivs.flow.Flow;
 import ivs.sink.SinkChain;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -308,7 +309,8 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
     }
 
     @Override
-    public OUT[] toArray(OUT[] e) {
+    public OUT[] toArray(Class<OUT> outClass) {
+        OUT[] o = (OUT[]) Array.newInstance(outClass, 0);
         FlowPipLine<OUT, OUT> pipLine = new FlowPipLine<>(this) {
             private List<OUT> list;
 
@@ -328,7 +330,7 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
 
                     @Override
                     public void end() {
-                        state = list.toArray(e);
+                        state = list.toArray(o);
                         super.end();
                     }
                 };
