@@ -548,15 +548,10 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
 
     // 终结操作
     private void evaluate(FlowPipLine<?, OUT> end) {
-        evaluateSequential(end);
-    }
-
-    private void evaluateSequential(FlowPipLine<?,OUT> end){
         SinkChain<OUT, OUT> chain = this.warpPipeline(end);
 
         chain.begin(-1);
         end.spliterator.forEachRemaining(chain);
         chain.end();
     }
-
 }
