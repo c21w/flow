@@ -8,12 +8,16 @@ public class Test {
 
     public static void main(String[] args) {
 
-        Integer[] array = Flow.of(5, () -> new Random().nextInt(33333))
-                .distinct()
+        long last = Flow.of(5, () -> new Random().nextInt(33333))
                 .sort(Comparator.comparing(Integer::intValue))
+//                .peek(System.out::println)
+                .map(e -> e+"")
+                .map(e -> e.split(""))
+                .flatMap(e -> Flow.of(e))
                 .peek(System.out::println)
-                .toArray(Integer.class);
+                .count();
+//                .group(e -> e%2 == 0);
 
-        System.out.println(Arrays.toString(array));
+        System.out.println(last);
     }
 }

@@ -91,4 +91,10 @@ public interface Flow<T> {
 
     // 获取第一个元素
     Optional<T> findFirst();
+
+    // 获取最后一个元素
+    Optional<T> findLast();
+
+    // 分组，collect方法也可以实现
+    <E_OUT> Map<E_OUT,List<T>> group(Function<T,E_OUT> function);
 }

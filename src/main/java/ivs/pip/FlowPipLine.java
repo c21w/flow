@@ -5,10 +5,8 @@ import ivs.sink.SinkChain;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -21,6 +19,9 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
 
     // 操作变量
     private Object state;
+
+    // 元素数量
+    private int size;
 
     // 首节点初始化
     public FlowPipLine(Spliterator<IN> spliterator){
@@ -342,8 +343,25 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
 
     @Override
     public long count() {
-        Flow<Integer> map = map(e -> 1);
-        return map.reduce(0,Integer::sum);
+//        Flow<Integer> map = map(e -> 1);
+//        return map.reduce(0,Integer::sum);
+        FlowPipLine<OUT, OUT> pipLine = new FlowPipLine<>(this) {
+            @Override
+            public SinkChain<OUT, OUT> wrapSink(SinkChain<OUT, ?> sink) {
+                return new SinkChain<OUT, OUT>() {
+                    @Override
+                    public void begin(int n) {
+                        size = n;
+                        super.begin(n);
+                    }
+
+                    @Override
+                    public void accept(OUT t) { }
+                };
+            }
+        };
+        evaluate(pipLine);
+        return size;
     }
 
     @Override
@@ -544,6 +562,58 @@ public abstract class FlowPipLine<IN,OUT> implements Flow<OUT> {
         evaluate(pipLine);
         return Optional.ofNullable((OUT) state);
     }
+
+    @Override
+    public Optional<OUT> findLast() {
+        FlowPipLine<OUT, OUT> pipLine = new FlowPipLine<>(this) {
+            @Override
+            public SinkChain<OUT, OUT> wrapSink(SinkChain<OUT, ?> sink) {
+                return new SinkChain<OUT, OUT>() {
+                    @Override
+                    public void begin(int n) {
+                        state = null;
+                        super.begin(n);
+                    }
+
+                    @Override
+                    public void accept(OUT t) {
+                        state = t;
+                    }
+                };
+            }
+        };
+        evaluate(pipLine);
+        return Optional.ofNullable((OUT) state);
+    }
+
+    @Override
+    public <E_OUT> Map<E_OUT,List<OUT>> group(Function<OUT,E_OUT> function) {
+        FlowPipLine<OUT, OUT> pipLine = new FlowPipLine<>(this) {
+            @Override
+            public SinkChain<OUT, OUT> wrapSink(SinkChain<OUT, ?> sink) {
+                return new SinkChain<OUT, OUT>() {
+                    @Override
+                    public void begin(int n) {
+                        state = new ConcurrentHashMap<E_OUT,List<OUT>>();
+                        super.begin(n);
+                    }
+
+                    @Override
+                    public void accept(OUT t) {
+                        E_OUT apply = function.apply(t);
+                        Map<E_OUT, List<OUT>> map = (Map<E_OUT, List<OUT>>) state;
+                        List<OUT> outs = map.get(apply);
+                        if(outs == null)
+                            map.put(apply,new ArrayList<>());
+                        map.get(apply).add(t);
+                    }
+                };
+            }
+        };
+        evaluate(pipLine);
+        return (Map<E_OUT, List<OUT>>) state;
+    }
+
 
 
     // 终结操作
